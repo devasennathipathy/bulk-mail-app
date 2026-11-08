@@ -1,0 +1,11 @@
+services:
+  mongodb:
+    image: mongo:8
+    ports:
+      - "127.0.0.1:27017:27017"
+    volumes:
+      - postroom-data:/data/db
+    restart: unless-stopped
+
+volumes:
+  postroom-data:
