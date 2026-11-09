@@ -160,6 +160,28 @@ npm start
 
 Open **http://127.0.0.1:5000**. This uses the MongoDB and mail settings from `backend/.env`. For separate frontend hosting, set `VITE_API_URL` (including `/api`) before building, and set `CLIENT_ORIGIN` in the backend to that frontend origin.
 
+## Deploy on Vercel with MongoDB Atlas
+
+The root `vercel.json` deploys two services under one URL: Vite serves the frontend, and Express handles `/api/*`. The frontend uses its existing `/api` URL, so `VITE_API_URL` is not needed for this setup. This follows [Vercel's services configuration](https://vercel.com/docs/services).
+
+1. In Atlas, use your existing free cluster and create a dedicated database user with `readWrite` access to the `postroom` database. Save its password privately.
+2. Open **Connect → Drivers**, copy the connection string, and fill in the database username and password. URL-encode special characters in those two values. Use `postroom` as the database name after `.mongodb.net/`.
+3. Configure Atlas network access to permit the deployed backend's outbound addresses. Adding your laptop's IP permits only connections from your laptop. See [Atlas network access](https://www.mongodb.com/docs/atlas/security/ip-access-list/).
+4. Import the GitHub repository in Vercel. Keep **Root Directory** at `./` and **Application Preset** at **Services** so both services deploy together.
+5. Add these project environment variables:
+
+   | Name          | Value                                                                                                   |
+   | ------------- | ------------------------------------------------------------------------------------------------------- |
+   | `MONGODB_URI` | Your completed private Atlas connection string ending in `/postroom` (with any query options preserved) |
+   | `MAIL_MODE`   | `preview`                                                                                               |
+   | `MAIL_FROM`   | `Postroom <hello@example.com>`                                                                          |
+
+6. Deploy, then open `/api/health` on the deployed URL. It should show `database: "connected"` and mail mode `preview`. Save a preview in the composer and check Email history.
+
+The Vercel entrypoint is `backend/index.js`. It waits for a shared MongoDB connection and database indexes before handling API requests, reuses a small connection pool, and retries after failed connections on subsequent requests. It does not start the local server or a local MongoDB process. Cold starts do not mark other instances' in-progress campaigns as interrupted. Long-running campaign delivery needs a durable queue; Vercel function time limits still apply.
+
+Keep the initial deployment in preview mode. Admin authentication is still needed before exposing real SMTP sending and private recipient history publicly. Add SMTP environment variables only when that protection is in place. Never put database or SMTP credentials in a `VITE_` variable or commit them to GitHub.
+
 ## A simple mentor demo
 
 1. Explain the React form and its validation.

@@ -22,9 +22,12 @@ export function createApp({
   clientOrigin = 'http://localhost:5173',
   logger = console,
   rateLimitEnabled = true,
+  serveFrontend = true,
+  trustProxy = false,
 }) {
   const app = express();
   app.disable('x-powered-by');
+  if (trustProxy) app.set('trust proxy', trustProxy);
   app.use(helmet());
   app.use(cors({ origin: clientOrigin }));
   app.use(express.json({ limit: '128kb' }));
@@ -40,7 +43,8 @@ export function createApp({
   app.use('/api', (_req, res, next) => {
     if (!isDatabaseReady())
       return res.status(503).json({
-        message: 'MongoDB is not connected. Start MongoDB and check MONGODB_URI in backend/.env.',
+        message:
+          'MongoDB is not connected. Check MONGODB_URI and database network access in your backend environment settings (backend/.env when running locally).',
       });
     next();
   });
@@ -184,7 +188,7 @@ export function createApp({
 
   app.use('/api', (_req, res) => res.status(404).json({ message: 'API endpoint not found.' }));
   const distPath = fileURLToPath(new URL('../../frontend/dist/', import.meta.url));
-  if (existsSync(path.join(distPath, 'index.html'))) {
+  if (serveFrontend && existsSync(path.join(distPath, 'index.html'))) {
     app.use(express.static(distPath));
     app.get('/{*path}', (_req, res) => res.sendFile(path.join(distPath, 'index.html')));
   }

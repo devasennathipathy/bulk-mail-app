@@ -7,6 +7,8 @@ import { createApp } from '../src/app.js';
 import { createMailer } from '../src/mailer.js';
 import { repository } from '../src/repository.js';
 import { Email } from '../src/models/Email.js';
+import { createHostedApp } from '../src/hosted-app.js';
+import { createDatabaseConnection } from '../src/database.js';
 
 let mongo;
 const logger = { info() {}, error() {} };
@@ -37,14 +39,16 @@ function payload(overrides = {}) {
 }
 async function fixture(t, overrides = {}) {
   const mailer = overrides.mailer || createMailer({ MAIL_MODE: 'preview' });
-  const app = createApp({
-    repository,
-    mailer,
-    isDatabaseReady: () => true,
-    logger,
-    rateLimitEnabled: false,
-    ...overrides,
-  });
+  const app =
+    overrides.app ||
+    createApp({
+      repository,
+      mailer,
+      isDatabaseReady: () => true,
+      logger,
+      rateLimitEnabled: false,
+      ...overrides,
+    });
   const server = await new Promise((resolve) => {
     const instance = app.listen(0, '127.0.0.1', () => resolve(instance));
   });
@@ -292,4 +296,36 @@ test('send rate limiting rejects excessive requests', async (t) => {
   const call = await fixture(t, { rateLimitEnabled: true });
   for (let i = 0; i < 10; i++) assert.equal((await call('/emails', {})).status, 400);
   assert.equal((await call('/emails', {})).status, 429);
+});
+
+test('hosted API awaits MongoDB, retains the /api path, and leaves other campaigns in progress', async (t) => {
+  const activeRecord = await Email.create({ ...payload(), mode: 'preview', status: 'sending' });
+  const env = { MONGODB_URI: mongo.getUri('postroom_api_test'), MAIL_MODE: 'preview' };
+  const database = createDatabaseConnection({ uri: env.MONGODB_URI });
+  const mailer = createMailer(env);
+  const app = createHostedApp({ env, database, mailer, logger });
+  const call = await fixture(t, { app, mailer });
+  const [health, stats] = await Promise.all([call('/health'), call('/stats')]);
+  assert.equal(health.data.database, 'connected');
+  assert.equal(stats.status, 200);
+  assert.equal((await Email.findById(activeRecord._id)).status, 'sending');
+  const saved = await call('/emails', payload(), {
+    headers: { 'Content-Type': 'application/json', 'X-Forwarded-For': '192.0.2.10' },
+  });
+  assert.equal(saved.status, 201);
+  assert.equal(saved.data.record.status, 'previewed');
+  assert.equal((await call(`/emails/${saved.data.record._id}`)).data.deliveries.length, 2);
+});
+
+test('hosted API reports a missing Atlas configuration without crashing or exposing credentials', async (t) => {
+  const mailer = createMailer({ MAIL_MODE: 'preview' });
+  const app = createHostedApp({ env: {}, mailer, logger });
+  const call = await fixture(t, { app, mailer });
+  const health = await call('/health');
+  assert.equal(health.status, 200);
+  assert.equal(health.data.database, 'disconnected');
+  const history = await call('/emails');
+  assert.equal(history.status, 503);
+  assert.match(history.data.message, /backend environment settings/);
+  assert.equal((await call('/emails', payload())).status, 503);
 });
