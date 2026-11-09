@@ -5,6 +5,7 @@
   "description": "A React, Express, and MongoDB bulk email application",
   "scripts": {
     "setup": "npm install && npm --prefix backend install && npm --prefix frontend install",
+    "configure": "node backend/scripts/configure.js",
     "dev": "node scripts/dev.mjs",
     "demo": "node backend/scripts/demo.js",
     "dev:frontend": "npm --prefix frontend run dev",

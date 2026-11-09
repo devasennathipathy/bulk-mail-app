@@ -2,6 +2,18 @@
 
 A complete MERN project for composing and sending bulk email, with a React frontend, an Express API, Nodemailer, and MongoDB through Mongoose.
 
+## Configure the hosted app privately
+
+Run `npm run configure` from this project, then open **http://127.0.0.1:5101**. This local-only page asks separately for your Atlas cluster host, database username/password, and Gmail address/App Password. It builds and URL-encodes the connection string automatically. Use a fresh database password if it was exposed in a screenshot.
+
+The database check connects to the real Atlas database, initializes campaign indexes, and inserts/removes a temporary setup document to check write permission. The SMTP check authenticates through Nodemailer without sending email. The setup page never saves credentials to local files, browser storage, or console output.
+
+**Save to Vercel & deploy** verifies both connections, saves server-side Secret environment variables to Production and Preview for the configured `bulk-mail-app` project, and redeploys it. This requires the Vercel CLI and a signed-in account. Never enter credentials into chat or commit them to Git. Close the setup page and stop its local server after setup. An SMTP connection check does not guarantee inbox placement; after deployment, send a small test campaign to addresses you own and verify its stored recipient results.
+
+For Gmail, enable 2-Step Verification and create an App Password at [Google App Passwords](https://myaccount.google.com/apppasswords). App Password availability depends on your account policy. Use the password for the **Atlas database user**, and use the separate **Gmail App Password** for SMTP.
+
+The hosted application retains its Vercel deployment protection. Share access with your mentor through the Vercel project; making the send API public requires application authentication. A temporary Atlas network rule expires automatically, so it does not provide indefinite access for an unscheduled review.
+
 ## Quick demo
 
 You need Node.js **22.12+** (or a supported newer version) and npm. Run these commands from the project root:

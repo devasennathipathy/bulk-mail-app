@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="csrf-token" content="SETUP_CSRF_TOKEN"><title>Postroom · Private setup</title><link rel="stylesheet" href="/setup.css"><script src="/setup.js" defer></script></head>
+<body><main><span class="eyebrow">POSTROOM · LOCAL SETUP</span><h1>Connect once.<br>Make it work.</h1><p class="intro">Enter your account settings here on your own computer. We’ll check them before updating your Vercel project.</p>
+<form id="setup-form" autocomplete="off">
+<section><h2>1. MongoDB Atlas</h2><p>Use the password saved for this database user in Atlas. Your Atlas website login is separate.</p>
+<label for="cluster">Cluster host</label><input id="cluster" name="cluster" value="cluster0.rtvbsl1.mongodb.net" required spellcheck="false">
+<label for="username">Database username</label><input id="username" name="username" value="postroom_user" required spellcheck="false">
+<label for="password">Database password</label><input id="password" name="password" type="password" autocomplete="off" required>
+<p class="hint">The database is <strong>postroom</strong>. This page builds the connection string and encodes special characters for you.</p><button type="button" data-action="database" class="secondary">Check database only</button></section>
+<section><h2>2. Email sender</h2><p>For Gmail, create an App Password after enabling 2-Step Verification. Enter that App Password here.</p><p><a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noopener noreferrer">Open Google App Passwords →</a></p>
+<label for="email">Your sending email address</label><input id="email" name="email" type="email" placeholder="you@gmail.com" spellcheck="false">
+<div class="row"><div><label for="smtpHost">SMTP host</label><input id="smtpHost" name="smtpHost" value="smtp.gmail.com" spellcheck="false"></div><div><label for="smtpPort">SMTP port</label><input id="smtpPort" name="smtpPort" type="number" value="587" min="1" max="65535"></div></div>
+<label for="smtpPassword">SMTP password / Gmail App Password</label><input id="smtpPassword" name="smtpPassword" type="password" autocomplete="off"><p class="hint">For another provider, use its SMTP host, port, username/email, and password. Connections use TLS.</p></section>
+<div class="actions"><button type="button" data-action="verify" class="secondary">Verify both connections</button><button type="submit" id="publish">Save to Vercel & deploy</button></div>
+<p class="hint">Save & deploy replaces these project settings in Production and Preview and enables real SMTP sending. Checks do not send any email. Your Vercel account must already be signed in on this computer.</p>
+<div id="result" role="status" hidden></div><a id="app-link" href="https://bulk-mail-app-tau.vercel.app/" target="_blank" rel="noopener" hidden>Open your deployed app →</a>
+</form><footer>No credentials are saved in browser storage, local files, or setup logs. Close this page and stop the local setup server after use.</footer></main></body></html>

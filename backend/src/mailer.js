@@ -8,14 +8,15 @@ export function createMailer(env = process.env) {
   const port = Number(env.SMTP_PORT || 587);
   if (!Number.isInteger(port) || port < 1 || port > 65535)
     throw new Error('SMTP_PORT must be a valid port.');
+  const secure = env.SMTP_SECURE === undefined ? port === 465 : env.SMTP_SECURE === 'true';
   const transport =
     mode === 'preview'
       ? nodemailer.createTransport({ jsonTransport: true })
       : nodemailer.createTransport({
           host: env.SMTP_HOST,
           port,
-          secure: env.SMTP_SECURE === 'true',
-          requireTLS: env.SMTP_SECURE !== 'true',
+          secure,
+          requireTLS: !secure,
           auth: { user: env.SMTP_USER, pass: env.SMTP_PASS },
           connectionTimeout: 10000,
           greetingTimeout: 10000,
@@ -25,6 +26,11 @@ export function createMailer(env = process.env) {
     mode,
     configured,
     from: env.MAIL_FROM || 'Postroom <hello@example.com>',
+    async verify() {
+      if (mode !== 'smtp' || !configured)
+        throw new Error('Configure a real SMTP account before checking delivery settings.');
+      return transport.verify();
+    },
     async send({ email, subject, body }) {
       const info = await transport.sendMail({
         from: env.MAIL_FROM || 'Postroom <hello@example.com>',
