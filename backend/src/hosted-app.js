@@ -21,6 +21,9 @@ export function createHostedApp({
         name: error.name,
         code: Number.isInteger(error.code) ? error.code : undefined,
         codeName: error.codeName,
+        authenticationFailed: /bad auth|authentication failed|unable to authenticate/i.test(
+          error.message || '',
+        ),
       });
     }
     next();
