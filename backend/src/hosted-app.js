@@ -17,7 +17,11 @@ export function createHostedApp({
       await database.connect();
     } catch (error) {
       // Health still responds, and database-dependent routes return a useful 503.
-      logger.error('Hosted database connection unavailable', { name: error.name });
+      logger.error('Hosted database connection unavailable', {
+        name: error.name,
+        code: Number.isInteger(error.code) ? error.code : undefined,
+        codeName: error.codeName,
+      });
     }
     next();
   });
